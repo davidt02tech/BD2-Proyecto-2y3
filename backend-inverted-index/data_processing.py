@@ -3,6 +3,11 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import SnowballStemmer  # More language options
 from nltk.corpus import stopwords
 
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+
 # Function to process lyrics based on language
 
 def get_language_name(lan):
@@ -16,10 +21,8 @@ def get_language_name(lan):
         case _:
             return "english"
 
+
 def process_text(text, language):
-    nltk.download('punkt')
-    nltk.download('stopwords')
-    nltk.download('wordnet')
     # Tokenize
     language = get_language_name(language)
     tokenized_words = word_tokenize(text, language)
