@@ -44,8 +44,8 @@ class SPIMI(Index):
                 term, doc_ids = line.split(":", 1)
                 self.index[term.strip()] = eval(doc_ids)
 
-    def build():
-        #build step
+    def build(self):
+        # build step
         data = pd.read_csv(self.file)
         data = data[data["language"].isin(["en", "es", "de"])]
         current_id = 0
