@@ -2,19 +2,6 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.stem import SnowballStemmer  # More language options
 from nltk.corpus import stopwords
-import pandas as pd
-
-# Ensure necessary NLTK resources are downloaded
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
-
-# Load your Spotify dataset (adjust file path and column names as needed)
-data = pd.read_csv('spotify_songs.csv')
-
-# Filter only English, Spanish, and German songs
-data = data[data["language"].isin(["en", "es", "de"])]
-
 
 # Function to process lyrics based on language
 
@@ -27,11 +14,12 @@ def get_language_name(lan):
         case "es":
             return "spanish"
         case _:
-            print("didnt match language: ", lan)
             return "english"
 
-
 def process_text(text, language):
+    nltk.download('punkt')
+    nltk.download('stopwords')
+    nltk.download('wordnet')
     # Tokenize
     language = get_language_name(language)
     tokenized_words = word_tokenize(text, language)
