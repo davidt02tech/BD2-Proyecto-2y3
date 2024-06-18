@@ -1,0 +1,12 @@
+---
+import Layout from "../layouts/Layout.astro";
+import SpotifyApp from "../components/react/SpotifySearch.tsx";
+---
+
+<Layout title="SpotifyIdTrack">
+    <main class="pt-16">
+      <h1 class="text-4xl text-green-500 font-bold">Spotify Api</h1>
+      <SpotifyApp client:load />
+    </main>
+  </Layout>
+  

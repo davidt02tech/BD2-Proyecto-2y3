@@ -1,0 +1,12 @@
+---
+import Layout from "../layouts/Layout.astro";
+import SpotifyApp2 from "../components/react/SpotifySearch2.tsx";
+---
+
+<Layout title="Search">
+    <main class="pt-16">
+        <h1 class="text-4xl text-green-500 font-bold mb-5">Spotify Search</h1>
+        <SpotifyApp2  client:load/>
+    </main>
+</Layout>
+
