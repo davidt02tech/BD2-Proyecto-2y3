@@ -5,10 +5,8 @@ import heapq
 import pandas as pd
 import os
 
-
 class Index:
     pass
-
 
 class SPIMI(Index):
     BUFFER = 65536
@@ -89,16 +87,11 @@ class SPIMI(Index):
                 f.write(f"{term}:{doc_ids}\n")
 
 
-class IndexEntry:
-    def __init__(self, term, doc_ids):
-        self.term = term
-        self.doc_ids = doc_ids
+    def search_query_in_index(self, query):
+        with open(os.path.join(self.path, f"merged_index_{self.index_number}.txt"), 'r', encoding="utf-8") as f:
+            for line in f:
+                term, doc_ids = line.split(":", 1)
+                if term == query:
+                    return eval(doc_ids)
+        return set()
 
-    def __str__(self):
-        return f"{self.term}:{self.doc_ids}"
-
-    def __lt__(self, other):
-        return self.term < other.term
-
-    def __gt__(self, other):
-        return self.term < other.term
