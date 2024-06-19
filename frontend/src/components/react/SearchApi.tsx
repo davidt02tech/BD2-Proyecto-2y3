@@ -172,53 +172,64 @@ const SeachApi1: React.FC = () => {
         <ModalContent className="max-w-7xl mx-auto p-4">
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 text-green-500">Lyrics</ModalHeader>
-              <ModalBody className="overflow-auto max-h-96">
-                <p>{selectedLyrics}</p>
+              <ModalHeader className="flex flex-col gap-1 text-green-500">Song Details</ModalHeader>
+              <ModalBody className="overflow-auto max-h-[500px]">
+               
                 {spotifyTrack ? (
                   <>
-                    <img src={spotifyTrack.album.images[0].url} className="max-w-sm" />
-                    <div className="mt-5">{spotifyTrack.name}</div>
-                    <div className="opacity-70 text-sm">{spotifyTrack.artists[0].name}</div>
-                    <div className="mt-5">
-                      {spotifyTrack.preview_url ? (
-                        <audio ref={audioRef} key={spotifyTrack.preview_url} controls>
-                          <source src={spotifyTrack.preview_url} type="audio/mpeg" />
-                          Your browser does not support the audio element.
-                        </audio>
-                      ) : (
-                        <p>No preview available</p>
-                      )}
-                    </div>
-                    <h1 className='text-3xl text-green-500 font-semibold'>Album:</h1>
-                    {album && (
-                      <div className="mt-5">
-                        <h2 className="text-xl">{album.name}</h2>
-                        <div className="opacity-70 text-sm mb-5">{album.artists.map(artist => artist.name).join(", ")}</div>
-                        <Table aria-label="Album Tracks" selectionMode="none">
-                          <TableHeader>
-                            <TableColumn>#</TableColumn>
-                            <TableColumn>Title</TableColumn>
-                            <TableColumn>Artist(s)</TableColumn>
-                            <TableColumn>Id</TableColumn>
-                          </TableHeader>
-                          <TableBody>
-                            {tracks.map(track_ => (
-                              <TableRow key={track_.id}>
-                                <TableCell>{track_.track_number}</TableCell>
-                                <TableCell>{track_.name}</TableCell>
-                                <TableCell>{track_.artists.map(artist => artist.name).join(", ")}</TableCell>
-                                <TableCell>{track_.id}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                    <div className='flex'>
+                      <div>
+                        <img src={spotifyTrack.album.images[0].url} className="max-w-xs" />
+                        <div className="mt-5">{spotifyTrack.name}</div>
+                        <div className="opacity-70 text-sm">{spotifyTrack.artists[0].name}</div>
+                        <div className="mt-5">
+                          {spotifyTrack.preview_url ? (
+                            <audio ref={audioRef} key={spotifyTrack.preview_url} controls>
+                              <source src={spotifyTrack.preview_url} type="audio/mpeg" />
+                              Your browser does not support the audio element.
+                            </audio>
+                          ) : (
+                            <p>No preview available</p>
+                          )}
+                        </div>
                       </div>
-                    )}
+                      <div className='ml-5'>
+                        <h1 className='text-3xl text-green-500 font-semibold'>Album:</h1>
+                          {album && (
+                            <div className="mt-5">
+                              <h2 className="text-xl">{album.name}</h2>
+                              <div className="opacity-70 text-sm mb-5">{album.artists.map(artist => artist.name).join(", ")}</div>
+                              <Table aria-label="Album Tracks" selectionMode="none">
+                                <TableHeader>
+                                  <TableColumn>#</TableColumn>
+                                  <TableColumn>Title</TableColumn>
+                                  <TableColumn>Artist(s)</TableColumn>
+                                  <TableColumn>Id</TableColumn>
+                                </TableHeader>
+                                <TableBody>
+                                  {tracks.map(track_ => (
+                                    <TableRow key={track_.id}>
+                                      <TableCell>{track_.track_number}</TableCell>
+                                      <TableCell>{track_.name}</TableCell>
+                                      <TableCell>{track_.artists.map(artist => artist.name).join(", ")}</TableCell>
+                                      <TableCell>{track_.id}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          )}
+                      </div>
+                    </div>
+                    
                   </>
                 ) : (
                   <p>Loading...</p>
                 )}
+                <div className='text-xl text-green-500 font-bold'>
+                  Lyrics
+                </div>
+                <p>{selectedLyrics}</p>
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
