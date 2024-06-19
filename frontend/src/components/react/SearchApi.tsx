@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Input, Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Image } from '@nextui-org/react';
+import { Input, Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@nextui-org/react';
 import { Select, SelectItem } from "@nextui-org/react";
 import { animals } from "../data2.js";
 import type { Track } from "../../models/SpotifyTrack.ts";
@@ -71,6 +71,7 @@ const SeachApi1: React.FC = () => {
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [selectedType, setType] = useState<string | null>(null);
+  const [k, setK] = useState<number>(2);  // Nuevo estado para k
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [selectedLyrics, setSelectedLyrics] = useState<string | null>(null);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
@@ -80,9 +81,9 @@ const SeachApi1: React.FC = () => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const fetchTrackData = async (searchQuery: string) => {
+  const fetchTrackData = async (searchQuery: string, indexType: string, kValue: number) => {
     try {
-      const response = await fetch(`http://54.156.105.2:8000/ginIndexSearch/?q=${searchQuery}`, {
+      const response = await fetch(`http://54.156.105.2:8000/indexSearch?q=${searchQuery}&k=${kValue}&indexType=${indexType}`, {
         headers: {
           'accept': 'application/json',
         },
@@ -102,7 +103,7 @@ const SeachApi1: React.FC = () => {
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     const formattedQuery = query.replace(/\s+/g, '_');
-    fetchTrackData(formattedQuery);
+    fetchTrackData(formattedQuery, selectedType || 'default', k);
   };
 
   const handleRowClick = async (lyrics: string, trackId: string) => {
@@ -134,6 +135,13 @@ const SeachApi1: React.FC = () => {
           className='max-w-sm'
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+        />
+        <Input
+          type="number"
+          placeholder="Enter k value"
+          className='max-w-sm'
+          value={k.toString()}
+          onChange={(e) => setK(parseInt(e.target.value))}
         />
         <Button type="submit">Search</Button>
         <Select
@@ -175,7 +183,6 @@ const SeachApi1: React.FC = () => {
             <>
               <ModalHeader className="flex flex-col gap-1 text-green-500">Song Details</ModalHeader>
               <ModalBody className="overflow-auto max-h-[500px]">
-               
                 {spotifyTrack ? (
                   <>
                     <div className='flex'>
@@ -222,7 +229,6 @@ const SeachApi1: React.FC = () => {
                           )}
                       </div>
                     </div>
-                    
                   </>
                 ) : (
                   <p>Loading...</p>
