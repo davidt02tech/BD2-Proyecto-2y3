@@ -101,7 +101,8 @@ const SeachApi1: React.FC = () => {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    fetchTrackData(query);
+    const formattedQuery = query.replace(/\s+/g, '_');
+    fetchTrackData(formattedQuery);
   };
 
   const handleRowClick = async (lyrics: string, trackId: string) => {
