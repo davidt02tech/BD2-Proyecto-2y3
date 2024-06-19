@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Input, Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@nextui-org/react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Input, Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Image } from '@nextui-org/react';
 import { Select, SelectItem } from "@nextui-org/react";
 import { animals } from "../data2.js";
+import type { Track } from "../../models/SpotifyTrack.ts";
+import type { Album } from "../../models/SpotifyAlbum.ts";
 
 export interface TrackData {
   track_id: string;
@@ -10,13 +12,73 @@ export interface TrackData {
   lyrics: string;
 }
 
-export const SeachApi1: React.FC = () => {
+const getToken = async () => {
+  const clientId = "cdce14d45a9642a6a218e361e63a1c92";
+  const clientSecret = "9b86e1effcc641e492fbc44a2fc81b15";
+  const response = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      grant_type: "client_credentials",
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  });
+  const data = await response.json();
+  return data.access_token;
+};
+
+const fetchSpotifyTrack = async (accessToken: string, trackId: string): Promise<Track> => {
+  const response = await fetch(`https://api.spotify.com/v1/tracks/${trackId}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const data = await response.json();
+  return data;
+};
+
+const fetchAlbumTracks = async (accessToken: string, albumId: string): Promise<Track[]> => {
+  const response = await fetch(`https://api.spotify.com/v1/albums/${albumId}/tracks`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const data = await response.json();
+  return data.items;
+};
+
+const fetchAlbumDetails = async (accessToken: string, albumId: string): Promise<Album> => {
+  const response = await fetch(`https://api.spotify.com/v1/albums/${albumId}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const data = await response.json();
+  return data;
+};
+
+const SeachApi1: React.FC = () => {
   const [trackData, setTrackData] = useState<TrackData[]>([]);
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [selectedType, setType] = useState<string | null>(null);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [selectedLyrics, setSelectedLyrics] = useState<string | null>(null);
+  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [spotifyTrack, setSpotifyTrack] = useState<Track | null>(null);
+  const [album, setAlbum] = useState<Album | null>(null);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const fetchTrackData = async (searchQuery: string) => {
     try {
@@ -42,10 +104,25 @@ export const SeachApi1: React.FC = () => {
     fetchTrackData(query);
   };
 
-  const handleRowClick = (lyrics: string) => {
+  const handleRowClick = async (lyrics: string, trackId: string) => {
     setSelectedLyrics(lyrics);
+    setSelectedTrackId(trackId);
+    const token = await getToken();
+    setAccessToken(token);
+    const trackData = await fetchSpotifyTrack(token, trackId);
+    setSpotifyTrack(trackData);
+    const albumData = await fetchAlbumDetails(token, trackData.album.id);
+    setAlbum(albumData);
+    const tracksData = await fetchAlbumTracks(token, trackData.album.id);
+    setTracks(tracksData);
     onOpen();
   };
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = 0.3; 
+    }
+  }, [spotifyTrack]);
 
   return (
     <>
@@ -78,7 +155,7 @@ export const SeachApi1: React.FC = () => {
           </TableHeader>
           <TableBody>
             {trackData.map((track) => (
-              <TableRow key={track.track_id} onClick={() => handleRowClick(track.lyrics)}>
+              <TableRow key={track.track_id} onClick={() => handleRowClick(track.lyrics, track.track_id)}>
                 <TableCell>{track.track_name}</TableCell>
                 <TableCell>{track.track_artist}</TableCell>
                 <TableCell>{track.track_id}</TableCell>
@@ -96,8 +173,52 @@ export const SeachApi1: React.FC = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1 text-green-500">Lyrics</ModalHeader>
-              <ModalBody>
+              <ModalBody className="overflow-auto max-h-96">
                 <p>{selectedLyrics}</p>
+                {spotifyTrack ? (
+                  <>
+                    <img src={spotifyTrack.album.images[0].url} className="max-w-sm" />
+                    <div className="mt-5">{spotifyTrack.name}</div>
+                    <div className="opacity-70 text-sm">{spotifyTrack.artists[0].name}</div>
+                    <div className="mt-5">
+                      {spotifyTrack.preview_url ? (
+                        <audio ref={audioRef} key={spotifyTrack.preview_url} controls>
+                          <source src={spotifyTrack.preview_url} type="audio/mpeg" />
+                          Your browser does not support the audio element.
+                        </audio>
+                      ) : (
+                        <p>No preview available</p>
+                      )}
+                    </div>
+                    <h1 className='text-3xl text-green-500 font-semibold'>Album:</h1>
+                    {album && (
+                      <div className="mt-5">
+                        <h2 className="text-xl">{album.name}</h2>
+                        <div className="opacity-70 text-sm mb-5">{album.artists.map(artist => artist.name).join(", ")}</div>
+                        <Table aria-label="Album Tracks" selectionMode="none">
+                          <TableHeader>
+                            <TableColumn>#</TableColumn>
+                            <TableColumn>Title</TableColumn>
+                            <TableColumn>Artist(s)</TableColumn>
+                            <TableColumn>Id</TableColumn>
+                          </TableHeader>
+                          <TableBody>
+                            {tracks.map(track_ => (
+                              <TableRow key={track_.id}>
+                                <TableCell>{track_.track_number}</TableCell>
+                                <TableCell>{track_.name}</TableCell>
+                                <TableCell>{track_.artists.map(artist => artist.name).join(", ")}</TableCell>
+                                <TableCell>{track_.id}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p>Loading...</p>
+                )}
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
