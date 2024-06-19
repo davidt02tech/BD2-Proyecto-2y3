@@ -20,7 +20,7 @@ export interface TrackData {
   acousticness: number;
   instrumentalness: number;
   liveness: number;
-  valence: number;
+  valence: number;  
   tempo: number;
   duration_ms: number;
   language: string;
