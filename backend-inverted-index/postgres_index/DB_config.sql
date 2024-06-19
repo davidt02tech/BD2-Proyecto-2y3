@@ -38,7 +38,8 @@ ALTER TABLE spotify_table ADD COLUMN author_lyrics_tsvector tsvector;
 
 UPDATE spotify_table 
 SET author_lyrics_tsvector = setweight(to_tsvector('english', track_artist), 'A') 
-	|| setweight(to_tsvector('english', lyrics), 'B');
+	|| setweight(to_tsvector('english', track_name), 'B') 
+	|| setweight(to_tsvector('english', lyrics), 'C');
 
 
 CREATE INDEX idx_gin_author_lyrics ON spotify_table USING GIN (author_lyrics_tsvector);
