@@ -1,5 +1,4 @@
 from collections import defaultdict
-from sys import getsizeof
 from data_processing import process_text
 import heapq
 import pandas as pd
@@ -8,42 +7,82 @@ import os
 class Index:
     pass
 
+class Bucket:
+    def __init__(self, postings=set, tf=0, next_bucket=-1, bucket_size=0):
+        self.postings = postings
+        self.tf = tf
+        self.next_bucket = next_bucket
+        self.bucket_size = bucket_size
+
+    def __repr__(self):
+        return f"({self.postings}, {self.tf}, {self.next_bucket}, {self.bucket_size})"
+
+    def _get_len(self):
+        return len(self.__repr__())
+
+    def add_to_postings(self, doc_id):
+        pass
+
+class IndexEntry:
+    def __init__(self, term, doc_ids):
+        self.term = term
+        self.doc_ids = doc_ids
+
+    def __str__(self):
+        return f"{self.term}:{self.doc_ids}"
+
+    def __lt__(self, other):
+        return self.term < other.term
+
+    def __gt__(self, other):
+        return self.term < other.term
+
+
+
 class SPIMI(Index):
-    BUFFER = 65536
+    BLOCK_SIZE = 4096  # n of entries
+    BUCKET_SIZE = 4096  # n of chars
     index_number = 0
 
-    def __init__(self, file_path, index_folder):
-        self.index = defaultdict(set)
+    def get_buckets_path(self):
+        return os.path.join(self.path, f"buckets_{self.index_number}.txt")
+
+    def get_block_path(self, current_index=None):
+        if current_index is None:
+            current_index = self.current_index
+        return os.path.join(self.path, f"index_{self.index_number}_block_{current_index}.txt")
+
+    def __init__(self, data_path, index_folder):
+        self.index = defaultdict(Bucket)
         self.path = index_folder
         if not os.path.exists(self.path):
             os.makedirs(self.path)
-        self.file = file_path
+        self.file = data_path
         self.current_index = 0
         self.index_number = SPIMI.index_number
         SPIMI.index_number += 1
 
     def add(self, term, doc_id):
-        if getsizeof(self.index) + getsizeof(term) + getsizeof(doc_id) > self.BUFFER:
-            self.save(os.path.join(self.path,
-                                   f"index_{self.index_number}_file_{self.current_index}.txt"))
-            self.current_index += 1
-
-        self.index[term].add(doc_id)
+        if len(self.index) + 1 > self.BLOCK_SIZE:
+            self.save_block()
+            self.index = defaultdict(Bucket)
+        self.index[term].add_to_postings(doc_id)
 
     def get(self, term):
         return self.index.get(term, {})
 
-    def save(self, path):
+    def save_block(self):
         self.index = dict(sorted(self.index.items()))
-        with open(path, 'w', encoding="utf-8") as f:
-            for term, doc_ids in self.index.items():
-                f.write(f"{term}:{doc_ids}\n")
+        with open(self.get_block_path(), 'w', encoding="utf-8") as f:
+            for term, bucket in self.index.items():
+                f.write(f"{term}:{str(bucket)}")
+
         self.index = defaultdict(set)
 
     def load(self, path):
         with open(path, 'r', encoding='utf-8') as f:
             for line in f:
-                term, doc_ids = line.split(":", 1)
+                term, (df, doc_ids) = line.split(":", 1)
                 self.index[term.strip()] = eval(doc_ids)
 
     def build(self):
@@ -57,7 +96,7 @@ class SPIMI(Index):
                 self.add(token, index)
         # merge step
         self.save(os.path.join(self.path,
-                                   f"index_{self.index_number}_file_{self.current_index}.txt"))
+                               f"index_{self.index_number}_file_{self.current_index}.txt"))
         self.current_index += 1
         sorted_index = []
         merged_index = defaultdict(set)
@@ -73,7 +112,7 @@ class SPIMI(Index):
                     readers.pop(i)
                     continue
                 term, doc_ids = line.split(":", 1)
-                heapq.heappush(sorted_index, IndexEntry(term, doc_ids))
+                heapq.heappush(sorted_index, IndexEntry(term, eval(doc_ids)))
         for entry in sorted_index:
             merged_index[entry.term].add(entry.doc_ids)
 
