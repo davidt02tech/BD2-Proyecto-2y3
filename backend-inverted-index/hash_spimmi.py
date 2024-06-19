@@ -11,6 +11,7 @@ import hashlib
 import pickle
 
 
+
 class SPIMMI:
     def __init__(self, file, language='english', block_size=1000, index_dir='index'):
         self.file = file
@@ -21,12 +22,13 @@ class SPIMMI:
         self.doc_lengths = {}
         self.doc_count = 0
         self.track_ids = {}
+        self.track_titles = {}
         
         # Crear el directorio del índice si no existe
         if not os.path.exists(index_dir):
             os.makedirs(index_dir)
         
-    def add_document(self, doc_id, text, language, track_id):
+    def add_document(self, doc_id, text, language, track_id, track_title):
         tokens = process_text(text, language)
         term_freq = Counter(tokens)
         norm = 0
@@ -38,6 +40,7 @@ class SPIMMI:
         
         self.doc_lengths[doc_id] = math.sqrt(norm)
         self.track_ids[doc_id] = track_id
+        self.track_titles[doc_id] = track_title
         self.doc_count += 1
         
         # Si el número de documentos procesados en memoria supera el tamaño del bloque, escribir en disco
@@ -76,6 +79,12 @@ class SPIMMI:
             return json.load(f)
     
     def query(self, query_text, top_k=10):
+        query_text = query_text.lower()
+        exact_matches = [doc_id for doc_id, title in self.track_titles.items() if title.lower() == query_text]
+        
+        if exact_matches:
+            return [(self.track_ids[doc_id], 1.0) for doc_id in exact_matches]
+        
         tokens = process_text(query_text, self.language)
         index = self.load_index()
         
@@ -103,22 +112,23 @@ class SPIMMI:
 
     def build(self):
         data = pd.read_csv(self.file)
-        data['text'] = data.apply(lambda row: f"{row['track_id']} {row['track_name']} {row['lyrics']}" if pd.notna(row['lyrics']) else f"{row['track_id']} {row['track_name']}", axis=1)
+        data['text'] = data.apply(lambda row: f"{row['lyrics']} {row['track_name']} {row['track_artist']}" if pd.notna(row['lyrics']) else f"{row['track_name']} {row['track_artist']}", axis=1)
         self.doc_count = len(data)
         
         for index, row in data.iterrows():
             text = row['text']
             language = row.get('language', 'en')
             track_id = row['track_id']
+            track_title = row['track_name']
             if pd.notna(text):
-                self.add_document(index, text, language, track_id)
+                self.add_document(index, text, language, track_id, track_title)
         
         if self.term_doc_freq:
             self.write_block_to_disk()
         
         self.merge_blocks()
 
-    def visualize_query_results(self, query_text, top_k):
+    def visualize_query_results(self, query_text, top_k=10):
         results = self.query(query_text, top_k=top_k)
         
         if not results:
@@ -126,7 +136,7 @@ class SPIMMI:
             return
         
         # Create a DataFrame from the results
-        results_df = pd.DataFrame(results, columns=['Document ID', 'Relevance Score'])
+        results_df = pd.DataFrame(results, columns=['Track ID', 'Relevance Score'])
         
         # Display the results in a tabular format
         print("Top {} results for the query '{}':".format(top_k, query_text))
@@ -134,8 +144,8 @@ class SPIMMI:
         
         # Plot the results
         plt.figure(figsize=(10, 6))
-        plt.bar(results_df['Document ID'], results_df['Relevance Score'], color='blue')
-        plt.xlabel('Document ID')
+        plt.bar(results_df['Track ID'], results_df['Relevance Score'], color='blue')
+        plt.xlabel('Track ID')
         plt.ylabel('Relevance Score')
         plt.title('Top {} Results for Query: "{}"'.format(top_k, query_text))
         plt.xticks(rotation=45)
@@ -148,7 +158,7 @@ index_folder = "indexes/"
 spimmi = SPIMMI(file='spotify_songs.csv', language='english', block_size=1000, index_dir='index')
 spimmi.build()
 # Realizar una consulta
-query = "If you get to hear"
+query = "Shape of You"
 # top_docs = spimmi.query(query, top_k=5)
 # print(top_docs)
 spimmi.visualize_query_results(query, top_k=5)
