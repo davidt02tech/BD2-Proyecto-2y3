@@ -156,13 +156,14 @@ class SPIMI:
                         "w",
                         encoding="utf-8",
                 ) as f:
-                    for term, bucket in merged.items():
-                        f.write(f"({term},{}):{bucket}\n")
+                    for term, df_bucket in merged.items():
+                        f.write(f"({term},{df_bucket[0]}):{df_bucket[1]}\n")
                 merged = dict()
 
             if term in merged:
-                lhs_postings, lhs_next = self.load_bucket(merged[term])
+                lhs_postings, lhs_next = self.load_bucket(merged[term][1])
                 rhs_postings, rhs_next = self.load_bucket(bucket_pointer)
+                merged[term][0] += df
                 merge_postings = True
                 while lhs_next is not None:
                     lhs_postings, lhs_next = self.load_bucket(lhs_next)
@@ -179,16 +180,17 @@ class SPIMI:
                             merge_postings = False
                         else:
                             rhs_postings, rhs_next = self.load_bucket(rhs_next)
+                            bucket_pointer = rhs_next
                     else:
                         lhs_next = bucket_pointer
                         merge_postings = False
-                with open(os.path.join(self.path, merged[term]), "w") as f:
+                with open(os.path.join(self.path, merged[term][1]), "w") as f:
                     if lhs_next is not None:
                         f.write(f"({lhs_postings},'{lhs_next}')")
                     else:
                         f.write(f"({lhs_postings},None)")
             else:
-                merged[term] = bucket_pointer
+                merged[term] = [df, bucket_pointer]
 
             pos, reader = readers[curr_reader]
             if pos in empty_readers:
