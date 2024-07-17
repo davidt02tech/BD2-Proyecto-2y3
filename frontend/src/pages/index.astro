@@ -1,17 +1,11 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import SearchApi1 from "../components/react/SearchApi.tsx";
-import RotatingImage from "../components/react/imageLoad.jsx";
 ---
 
 <Layout title="BD2-PROYECT">
   <main class="pt-16">
-    <div class="flex items-center justify-between">
-      <h1 class="text-7xl text-green-500 font-bold mb-5">Track Data</h1>
-      <div>
-        <RotatingImage client:load />
-      </div>
+    <div class="flex items-center justify-center border-green-500">
+      <h1 class="text-6xl font-bold specialtext">Proyecto de Base de datos 2</h1>
     </div>
-    <SearchApi1 client:load />
   </main>
 </Layout>

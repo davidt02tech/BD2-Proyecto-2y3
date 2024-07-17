@@ -14,7 +14,8 @@ const SimpleFloatingNav = () => {
     <nav className="fixed left-[50%] top-8 flex w-fit -translate-x-[50%] items-center gap-6 rounded-lg border-[1px] border-gray-600 bg-black p-2 text-md text-neutral-300">
       <Logo />
       <NavLink page="/">Home</NavLink>
-      <NavLink page='/TrackID'>TrackID</NavLink>
+      <NavLink page='/Songs'>Track Data</NavLink>
+      <NavLink page='/TrackID'>Track by ID</NavLink>
       <NavLink page='/Search'>Search</NavLink>
     </nav>
   );
