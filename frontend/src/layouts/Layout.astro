@@ -1,6 +1,7 @@
 ---
 import { NextUIProvider } from "@nextui-org/react";
 import { Navbar } from '../components/react/navbar.jsx';
+import { ViewTransitions } from 'astro:transitions';
 
 interface Props {
   title: string;
@@ -31,6 +32,7 @@ const { title } = Astro.props;
       <Navbar />
       <main>
         <slot />
+        <ViewTransitions />
       </main>
     </NextUIProvider>
   </body>

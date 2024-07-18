@@ -5,12 +5,14 @@ import { animals } from "../data2.js";
 import type { Track } from "../../models/SpotifyTrack.ts";
 import type { Album } from "../../models/SpotifyAlbum.ts";
 
+
 export interface TrackData {
   track_id: string;
   track_name: string;
   track_artist: string;
   lyrics: string;
 }
+
 
 const getToken = async () => {
   const clientId = "cdce14d45a9642a6a218e361e63a1c92";

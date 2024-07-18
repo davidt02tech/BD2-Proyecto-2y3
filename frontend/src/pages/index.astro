@@ -4,8 +4,137 @@ import Layout from "../layouts/Layout.astro";
 
 <Layout title="BD2-PROYECT">
   <main class="pt-16">
-    <div class="flex items-center justify-center border-green-500">
-      <h1 class="text-6xl font-bold specialtext">Proyecto de Base de datos 2</h1>
-    </div>
+    <h1 class="text-6xl font-bold specialtext text-green-500">Proyecto de Base de datos 2</h1>
+    <main class="p-10">
+      <section>
+        <h2 class="text-4xl font-semibold mb-4">Inverted Index using SPIMI technique</h2>
+        <ul class="list-disc list-inside">
+          <li><a href="#introducción" class="text-blue-500">Introducción</a></li>
+          <li><a href="#backend-índice-invertido" class="text-blue-500">Backend: Índice Invertido</a></li>
+          <li><a href="#frontend" class="text-blue-500">Frontend</a></li>
+          <li><a href="#experimentación" class="text-blue-500">Experimentación</a></li>
+          <li><a href="#autores" class="text-blue-500">Autores</a></li>
+        </ul>
+      </section>
+
+      <section id="introducción" class="mt-6">
+        <h2 class="text-4xl font-semibold mb-6">Introducción</h2>
+        <h3 class="text-2xl font-semibold mb-2">Objetivo del proyecto</h3>
+        <p>El objetivo de este proyecto es construir un índice invertido utilizando la técnica Single-Pass In-Memory Indexing (SPIMI) para manejar grandes colecciones de documentos.</p>
+        <ul class="list-disc list-inside ml-4">
+          <li>El índice invertido permitirá realizar consultas eficientes y recuperar los documentos más relevantes utilizando la similitud de coseno.</li>
+          <li>Se implementará una interfaz gráfica de usuario (GUI) para facilitar la interacción con el sistema de recuperación de información.</li>
+          <li>Se realizarán experimentos para evaluar el rendimiento del índice invertido y analizar los resultados obtenidos.</li>
+        </ul>
+        <h3 class="text-2xl font-semibold mb-2 mt-6">Dominio de datos</h3>
+        <p>El dominio de datos consiste en letras de canciones disponibles en Spotify. El dataset contiene la siguiente información:</p>
+        <ul class="list-disc list-inside ml-4">
+          <li><strong>Nombre del archivo</strong>: `spotify_songs.csv`</li>
+          <li><strong>Cantidad de filas</strong>: 18,454</li>
+          <li><strong>Cantidad de columnas</strong>: 25</li>
+          <li><strong>Nombres de columnas</strong>: `track_id`, `track_name`, `track_artist`, `lyrics`, etc.</li>
+        </ul>
+        <p>Las columnas que usaremos para la construcción del índice invertido son `track_name`, `track_artist` y `lyrics`. El objetivo es permitir a los usuarios buscar canciones por su nombre o por palabras clave en las letras de las canciones.</p>
+      </section>
+
+      <section id="backend-índice-invertido" class="mt-8">
+        <h2 class="text-3xl font-semibold mb-2">Backend: Índice Invertido</h2>
+        <h3 class="text-2xl font-semibold mb-2">Construcción en memoria secundaria</h3>
+        <p>La construcción del índice invertido se realiza en memoria secundaria utilizando la técnica SPIMI, que incluye los siguientes pasos:</p>
+        <ol class="list-decimal list-inside ml-4">
+          <li><strong>Preprocesamiento</strong>: Las letras de las canciones se preprocesan utilizando la tokenización, eliminación de stopwords y stemming.</li>
+          <li><strong>Construcción del índice</strong>: Los términos se agrupan en bloques. Cada bloque se ordena y se escribe en disco para liberar espacio en memoria.</li>
+          <li><strong>Merge de bloques</strong>: Los bloques ordenados se fusionan en un índice invertido final, almacenado en disco en formato `.txt`.</li>
+        </ol>
+
+        <h3 class="text-2xl font-semibold mb-2 mt-8">Ejecución de consultas aplicando Similitud de Coseno</h3>
+        <p>La ejecución de consultas se realiza aplicando la similitud de coseno entre la consulta y los documentos en el índice. El proceso incluye:</p>
+        <ol class="list-decimal list-inside ml-4 mb-8">
+          <li><strong>Procesamiento de la consulta</strong>: La consulta se tokeniza, se eliminan las stopwords y se aplican técnicas de stemming.</li>
+          <li><strong>Cálculo de pesos TF-IDF</strong>: Se calculan los pesos TF-IDF para los términos de la consulta y los documentos.</li>
+          <li><strong>Similitud de coseno</strong>: Se calcula la similitud de coseno entre la consulta y cada documento en el índice. Los documentos se ordenan por su relevancia y se devuelve el top-k de documentos más relevantes.</li>
+        </ol>
+        
+        <h3 class="text-2xl font-semibold mb-2">Índice Invertido en PostgreSQL</h3>
+        <p>El índice invertido puede ser integrado en PostgreSQL utilizando técnicas avanzadas de indexación como GIN (Generalized Inverted Index) para realizar búsquedas eficientes en texto completo.</p>
+        <p>Al aplicar el índice GIN a una columna de texto completo en PostgreSQL, este motor de base de datos utiliza un proceso de tokenización para dividir el texto en palabras o significativas. Elimina los stop words y caracteres no alfabéticos según el diccionario de texto completo especificado (en esta implementación será 'english'). Una vez que el texto se ha tokenizado, PostgreSQL genera un vector de texto (tsvector) para cada fila en la tabla que contiene la columna indexada. Este vector representa un conjunto ordenado de tokens que están presentes en el texto. Finalmente, cada palabra única se convierte en clave del índice, es decir, mantiene una lista de 'postings', donde cada posting contiene información sobre las filas de la tabla donde esa palabra en específico aparece.</p>
+        <p>Los pasos a seguir para la implementación del índice GIN en PostgreSQL fueron los siguientes:</p>
+        <ol class="list-decimal list-inside ml-4">
+          <li>Creamos una tabla `spotify_table` cuyas columnas son los mismos atributos indicados en el archivo de datos elegido.</li>
+          <li>Cargamos la información del archivo de datos a la tabla.</li>
+        </ol>
+        <pre><code>sql
+COPY spotify_table
+FROM 'C:\Program Files\PostgreSQL\13\data\spotify_songs.csv'
+DELIMITER ','
+CSV HEADER;
+        </code></pre>
+        <ol class="list-decimal list-inside ml-4" start="3">
+          <li>Creamos una nueva columna `author_lyrics_tsvector` en la tabla de tipo `tsvector`, la cual alojará la concatenación de los 3 campos elegidos a realizar la búsqueda de texto completo.</li>
+        </ol>
+        <pre><code>sql
+ALTER TABLE spotify_table ADD COLUMN author_lyrics_tsvector tsvector;
+        </code></pre>
+        <pre><code>sql
+UPDATE spotify_table 
+SET author_lyrics_tsvector = setweight(to_tsvector('english', track_artist), 'A') 
+|| setweight(to_tsvector('english', track_name), 'B') 
+|| setweight(to_tsvector('english', lyrics), 'C');
+        </code></pre>
+        <ol class="list-decimal list-inside ml-4" start="4">
+          <li>Por último, construimos el índice GIN sobre esta nueva columna.</li>
+        </ol>
+        <pre><code>sql
+CREATE INDEX idx_gin_author_lyrics ON spotify_table USING GIN (author_lyrics_tsvector);
+        </code></pre>
+        <ol class="list-decimal list-inside ml-4" start="5">
+          <li>Para realizar la consulta, utilizamos la función `ts_query` para convertir la cadena de búsqueda en una estructura que PostgreSQL pueda comparar con los índices creados.</li>
+        </ol>
+        <pre><code>sql
+SELECT track_id, track_name, track_artist, lyrics
+FROM spotify_table
+WHERE author_lyrics_tsvector @@ to_tsquery('english', query)
+LIMIT K;
+        </code></pre>
+      </section>
+
+      <section id="frontend" class="mt-8">
+        <h2 class="text-3xl font-semibold mb-2">Frontend</h2>
+        <h3 class="text-2xl font-semibold mb-2">Manual de usuario</h3>
+        <h3 class="text-2xl font-semibold mb-2">Diseño de GUI</h3>
+      </section>
+
+      <section id="experimentación" class="mt-8">
+        <h2 class="text-3xl font-semibold mb-2">Experimentación</h2>
+        <h3 class="text-2xl font-semibold mb-2">Resultados experimentales</h3>
+        <h3 class="text-2xl font-semibold mb-2">Análisis y discusión</h3>
+      </section>
+
+      <section id="autores" class="mt-8">
+        <h2 class="text-3xl font-semibold mb-2">Autores</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col items-center">
+            <img src="https://avatars.githubusercontent.com/u/67709665?v=4" alt="Isaac Vera Romero" class="w-32 h-32 rounded-full mb-2">
+            <a href="https://github.com/IsaacVera10" target="_blank" class="text-blue-500">github.com/IsaacVera10</a>
+          </div>
+          <div class="flex flex-col items-center">
+            <img src="https://avatars.githubusercontent.com/u/63759366?v=4" alt="David Torres Osorio" class="w-32 h-32 rounded-full mb-2">
+            <a href="https://github.com/davidt02tech" target="_blank" class="text-blue-500">github.com/davidt02tech</a>
+          </div>
+          <div class="flex flex-col items-center">
+            <img src="https://avatars.githubusercontent.com/u/82919499?v=4" alt="Pedro Mori" class="w-32 h-32 rounded-full mb-2">
+            <a href="https://github.com/PedroMO11" target="_blank" class="text-blue-500">github.com/PedroMO11</a>
+          </div>
+          <div class="flex flex-col items-center">
+            <img src="https://avatars.githubusercontent.com/u/75516714?v=4" alt="Leonardo Candio" class="w-32 h-32 rounded-full mb-2">
+            <a href="https://github.com/leonardocandio" target="_blank" class="text-blue-500">github.com/leonardocandio</a>
+          </div>
+          <div class="flex flex-col items-center">
+            <img src="https://avatars.githubusercontent.com/u/41312479?v=4" alt="Esteban Vasquez" class="w-32 h-32 rounded-full mb-2">
+            <a href="https://github.com/MuchSquid" target="_blank" class="text-blue-500">github.com/MuchSquid</a>
+          </div>
+        </div>
+      </section>
+    </main>
   </main>
 </Layout>
