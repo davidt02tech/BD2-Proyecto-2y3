@@ -159,6 +159,7 @@ Este manual de usuario está diseñado para guiarte a través del uso de nuestra
 
 - **Formulario de Búsqueda**:
   - Un formulario con campos para ingresar el ID de la canción, seleccionar el valor de 'k', y elegir el tipo de búsqueda. Incluye un botón de búsqueda para enviar la consulta.
+![imagen1[(a1.png)
 
 - **Tabla de Resultados**:
   - Una tabla que muestra los resultados de la búsqueda con columnas para el nombre de la canción, el artista y el ID.
