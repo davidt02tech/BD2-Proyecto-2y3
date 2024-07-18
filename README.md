@@ -6,6 +6,10 @@
     - [Construcción en memoria secundaria](#construcción-en-memoria-secundaria)
     - [Ejecución de consultas aplicando Similitud de Coseno](#ejecución-de-consultas-aplicando-similitud-de-coseno)
     - [Índice Invertido en PostgreSQL](#índice-invertido-en-postgresql)
+- [Backend: Índice Multidimensional](#backend-índice-multidimensional)
+    - [Técnica de indexación de las librerías utilizadas](#tecnica-indexacion-librerias)
+    - [KNN Search y Range Search](#busquedas)
+    - [Maldición de la dimensionalidad](#maldicion-dimensionalidad)
 - [Frontend](#frontend)
     - [Manual de usuario](#manual-de-usuario)
     - [Diseño de GUI](#diseño-de-gui)
@@ -84,10 +88,98 @@ FROM spotify_table
 WHERE author_lyrics_tsvector @@ to_tsquery('english', query)
 LIMIT K
 ```
+# Backend: Índice Multidimensional
+## Técnica de indexación de las librerías utilizadas
+### RTree
+La librería de ```rtree``` utiliza un índice R-tree para indexar datos multidimensionales. Un R-tree es una estructura de datos que organiza los datos espaciales en forma de árbol, permitiendo búsquedas eficientes basadas en la localización. Utiliza técnicas de particionamiento espacial para agrupar objetos que están cerca unos de otros en el espacio multidimensional.
+
+#### Construcción del Índice en rtree
+1. **Creación del Árbol:** Se inicia creando un árbol vacío.
+2. **Inserción de Datos:** Se añaden los datos al árbol R-tree, donde cada dato está asociado con un MBR que representa su ubicación en el espacio multidimensional.
+3. **Optimización y Balanceo:** El árbol R-tree se optimiza y balancea para asegurar que las búsquedas sean eficientes.
+
+### Faiss
+Faiss emplea técnicas avanzadas como índices vectoriales (como el índice IVFADC) para realizar búsquedas eficientes en grandes conjuntos de datos vectoriales, como características extraídas de imágenes o texto. Utiliza métodos de agrupamiento jerárquico y cuantización vectorial para optimizar el espacio de búsqueda.
+
+#### Construcción del Índice en faiss
+1. **Selección del Índice:** Se elige un tipo de índice adecuado para los datos vectoriales, como IVFADC (Índice de Vector de Fuerza Acelerada con Clustering Densidad Aproximado).
+2. **Entrenamiento del Índice:** Se entrena el índice con los datos vectoriales de entrada, donde se aplican técnicas de agrupamiento y cuantización para optimizar el espacio de búsqueda.
+3. **Indexación Eficiente:** Faiss realiza la indexación de los vectores de manera eficiente, preparándolos para realizar búsquedas rápidas.
+
+## Búsquedas
+### RTree
+- **KNN Search:** rtree permite realizar búsquedas de los k vecinos más cercanos utilizando el índice R-tree. Esto se logra buscando en el árbol los nodos más cercanos al punto de consulta y refinando la búsqueda en los nodos cercanos para encontrar los vecinos más cercanos.
+- **Range Search:** También es posible realizar búsquedas por rango en rtree. Esto implica buscar todos los objetos dentro de un rango específico definido por un rectángulo o una región en el espacio multidimensional.
+
+### Faiss
+- **KNN Search:** En faiss, el KNN Search se realiza utilizando índices de aproximación que optimizan la búsqueda de los vecinos más cercanos en espacios vectoriales de alta dimensionalidad.
+- **Range Search:** Faiss soporta búsquedas por rango mediante el uso de índices que permiten buscar todos los vectores dentro de un radio específico en el espacio vectorial.
+
+## Maldición de la dimensionalidad
+Para mitigar la maldición de la dimensionalidad se pueden seguir las siguientes estrategias:
+
+- **Selección de Características:** Reducir la dimensionalidad de los datos eliminando características irrelevantes o redundantes puede ayudar a mitigar la maldición de la dimensionalidad.
+- **Cuantización:** Faiss utiliza técnicas de cuantización que reducen la dimensionalidad efectiva de los datos, haciendo que las búsquedas sean más rápidas y eficientes.
+- **Índices Aproximados:** Faiss permite el uso de índices aproximados que facilitan la búsqueda rápida en datos de alta dimensionalidad al sacrificar una pequeña cantidad de precisión.
+- **Uso de GPUs:** Faiss está optimizado para utilizar GPUs, lo que permite realizar cálculos intensivos en paralelo y manejar grandes volúmenes de datos multidimensionales con mayor rapidez.
+
 
 # Frontend
+
 ## Manual de usuario
+
+### Introducción
+Este manual de usuario está diseñado para guiarte a través del uso de nuestra aplicación web de búsqueda de canciones en Spotify. Aquí encontrarás instrucciones paso a paso sobre cómo utilizar cada una de las funcionalidades disponibles en la aplicación.
+
+### Funcionalidades Principales
+1. **Búsqueda de Canciones por ID**:
+   - Ingresa el ID de la canción que deseas buscar en el campo de texto "Insert your ID song".
+   - Selecciona el valor de 'k' en el campo correspondiente.
+   - Selecciona el tipo de búsqueda en el menú desplegable "Type".
+   - Haz clic en el botón "Search" para iniciar la búsqueda.
+
+2. **Resultados de la Búsqueda**:
+   - Los resultados se mostrarán en una tabla con las columnas "Song Name", "Artist", y "Id".
+   - Haz clic en cualquier fila de la tabla para ver más detalles sobre la canción y el álbum.
+
+3. **Detalles de la Canción**:
+   - Al hacer clic en una fila de la tabla, se abrirá un modal con información detallada sobre la canción, incluyendo la carátula del álbum, el nombre de la canción, el nombre del artista y una vista previa del audio (si está disponible).
+   - También se mostrarán los detalles del álbum y una lista de todas las canciones del álbum en una tabla dentro del modal.
+
+4. **Búsqueda Multidimensional**:
+   - Navega a la sección "Multi Dimensional Search" para realizar búsquedas avanzadas.
+   - Ingresa los parámetros de búsqueda y selecciona las opciones disponibles.
+   - Visualiza los resultados de la búsqueda en una tabla similar a la de la búsqueda por ID.
+
 ## Diseño de GUI
+
+### Estructura de la Página
+- **Encabezado**:
+  - El encabezado contiene enlaces de navegación a las diferentes secciones de la aplicación: Home, Index Search, Multi Dimensional Search, y Search.
+
+- **Formulario de Búsqueda**:
+  - Un formulario con campos para ingresar el ID de la canción, seleccionar el valor de 'k', y elegir el tipo de búsqueda. Incluye un botón de búsqueda para enviar la consulta.
+
+![imagen1](a1.png)
+
+
+- **Tabla de Resultados**:
+  - Una tabla que muestra los resultados de la búsqueda con columnas para el nombre de la canción, el artista y el ID.
+
+![imagen1](a3.png)
+
+- **Modal de Detalles de la Canción**:
+  - Un modal que se abre al hacer clic en una fila de la tabla de resultados. Contiene detalles extensos sobre la canción y el álbum, incluyendo una vista previa de audio.
+
+![imagen1](a4.png)
+
+### Estilos y Temas
+- **Colores**:
+  - El diseño utiliza un fondo oscuro con texto en color claro para facilitar la lectura y reducir la fatiga visual.
+  - Los elementos interactivos, como botones y enlaces, están destacados en colores vibrantes como el verde y el rojo.
+
+- **Tipografía**:
+  - Las fuentes utilizadas son modernas y legibles, con tamaños de texto que varían según la importancia de la información (por ejemplo, títulos más grandes y negritas para encabezados).
 
 # Experimentación
 ## Resultados experimentales
