@@ -19,17 +19,20 @@ class Bucket:
     BUCKET_SIZE = 4096
     id = 0
 
-    def __init__(self, folder_path, postings=defaultdict(int), next_bucket=None):
+    def __init__(self, folder_path, next_bucket=None):
         self.id = Bucket.id
         self.path = folder_path
         Bucket.id += 1
-        self.postings = postings
+        self.postings = defaultdict(int)
         self.next_bucket = next_bucket
         self.first_bucket = self.id
         self.size = 0
 
     def serialize(self):
-        return f"({dict.__repr__(self.postings)}, {self.next_bucket})"
+        if self.next_bucket is None:
+            return f"({dict.__repr__(self.postings)}, None)"
+        else:
+            return f"({dict.__repr__(self.postings)}, '{self.next_bucket}')"
 
     def get_path(self):
         return os.path.join(self.path, self.get_pointer())
@@ -39,8 +42,8 @@ class Bucket:
 
     def add_to_postings(self, doc_id):
         if (
-            doc_id not in self.postings.keys()
-            and len(self.postings) + 1 > Bucket.BUCKET_SIZE
+                doc_id not in self.postings.keys()
+                and len(self.postings) + 1 > Bucket.BUCKET_SIZE
         ):
             self.save_bucket()
             self.id = Bucket.id + 1
@@ -50,8 +53,9 @@ class Bucket:
         self.postings[doc_id] += 1
         self.size += 1
 
-    def save_bucket(self):
-        self.next_bucket = Bucket.id + 1
+    def save_bucket(self, concatenate=True):
+        if concatenate:
+            self.next_bucket = Bucket.id + 1
         with open(self.get_path(), "w") as f:
             f.write(self.serialize())
 
@@ -83,12 +87,17 @@ class SPIMI:
     def add(self, term, doc_id):
         if len(self.index) + 1 > SPIMI.BLOCK_SIZE:
             self.save_block()
+            self.save_buckets_in_block()
             self.index = defaultdict(self._get_empty_bucket)
             self.current_index += 1
         self.index[term].add_to_postings(doc_id)
 
     def get(self, term):
         return self.index.get(term, {})
+
+    def save_buckets_in_block(self):
+        for term, bucket in self.index.items():
+            bucket.save_bucket(concatenate=False)
 
     def save_block(self, sort=True):
         if sort:
@@ -97,9 +106,8 @@ class SPIMI:
             for term, bucket in self.index.items():
                 f.write(f"({term},{bucket.size}):{bucket.get_pointer()}\n")
 
-        self.index = defaultdict(self._get_empty_bucket)
-
     def load_bucket(self, bucket_pointer):
+        bucket_pointer = bucket_pointer.rstrip()
         with open(os.path.join(self.path, bucket_pointer), "r") as f:
             line = f.readline()
             postings, next = eval(line)
@@ -109,15 +117,16 @@ class SPIMI:
         # build step
         data = pd.read_csv(self.file)
         data = data[data["language"].isin(["en", "es", "de"])]
-        for index, row in data.iterrows():
+        for _, row in data.iterrows():
             tokens = process_text(
                 row["lyrics"] + " " + row["track_name"] + " " + row["track_artist"],
                 row["language"],
             )
             for token in tokens:
-                self.add(token, index)
+                self.add(token, row["track_id"])
         # merge step
         self.save_block()
+        self.save_buckets_in_block()
         sorted_index = []
         file_names = [
             self.get_block_path(current_index=i) for i in range(self.current_index + 1)
@@ -129,13 +138,13 @@ class SPIMI:
         ]
         empty_readers = set()
 
-        curr_reader = int()
+        curr_reader = 0
 
         for i, reader in readers:
             line = reader.readline()
-            term_df, bucket_pointer = line.split(":", 1)
+            term_df, bucket_pointer = line.rstrip().split(":", 1)
             term, df = make_tuple(term_df)
-            heapq.heappush(sorted_index, (term, (df, bucket_pointer, curr_reader)))
+            heapq.heappush(sorted_index, (term, (df, bucket_pointer, i)))
 
         merged_index = 0
 
@@ -143,26 +152,45 @@ class SPIMI:
             term, (df, bucket_pointer, curr_reader) = heapq.heappop(sorted_index)
             if len(merged) + 1 > self.BLOCK_SIZE:
                 with open(
-                    os.path.join(
-                        self.path,
-                        f"index_{self.index_number}_merged_{merged_index}.txt",
-                    ),
-                    "w",
-                    encoding="utf-8",
+                        os.path.join(self.path, f"index_{self.index_number}_merged_{merged_index}.txt", ),
+                        "w",
+                        encoding="utf-8",
                 ) as f:
-                    for term, bucket in merged:
-                        f.write(f"({term},{df}):{bucket_pointer}\n")
+                    for term, df_bucket in merged.items():
+                        f.write(f"({term},{df_bucket[0]}):{df_bucket[1]}\n")
                 merged = dict()
 
             if term in merged:
-                next = merged[term]
-                while next is not None:
-                    temp = next
-                    postings, next = self.load_bucket(next)
-                with open(os.path.join(self.path, temp), "r") as f:
-                    f.write(f"({postings},{bucket_pointer})")
+                lhs_postings, lhs_next = self.load_bucket(merged[term][1])
+                rhs_postings, rhs_next = self.load_bucket(bucket_pointer)
+                merged[term][0] += df
+                merge_postings = True
+                while lhs_next is not None:
+                    lhs_postings, lhs_next = self.load_bucket(lhs_next)
+
+                while merge_postings:
+                    if len(lhs_postings) + len(rhs_postings) < Bucket.BUCKET_SIZE:
+                        for doc_id, tf in rhs_postings.items():
+                            if doc_id in lhs_postings:
+                                lhs_postings[doc_id] += tf
+                            else:
+                                lhs_postings[doc_id] = tf
+                        os.remove(os.path.join(self.path, bucket_pointer))
+                        if rhs_next is None:
+                            merge_postings = False
+                        else:
+                            rhs_postings, rhs_next = self.load_bucket(rhs_next)
+                            bucket_pointer = rhs_next
+                    else:
+                        lhs_next = bucket_pointer
+                        merge_postings = False
+                with open(os.path.join(self.path, merged[term][1]), "w") as f:
+                    if lhs_next is not None:
+                        f.write(f"({lhs_postings},'{lhs_next}')")
+                    else:
+                        f.write(f"({lhs_postings},None)")
             else:
-                merged[term] = bucket_pointer
+                merged[term] = [df, bucket_pointer]
 
             pos, reader = readers[curr_reader]
             if pos in empty_readers:
@@ -172,14 +200,10 @@ class SPIMI:
                 empty_readers.add(pos)
                 reader.close()
                 continue
-            term_df, bucket_pointer = line.split(":", 1)
+            term_df, bucket_pointer = line.rstrip().split(":", 1)
             term, df = make_tuple(term_df)
             heapq.heappush(sorted_index, (term, (df, bucket_pointer, curr_reader)))
 
-        # delete unmerged indexes
-        for i in range(self.current_index + 1):
-            file = self.get_block_path(i)
-            os.remove(file)
 
         def search(query, k=10):
             """
@@ -200,11 +224,9 @@ class SPIMI:
             # Load the merged index
             index = {}
             with open(
-                os.path.join(
-                    self.path,
-                ),
-                "r",
-                encoding="utf-8",
+                    os.path.join(self.path,),
+                    "r",
+                    encoding="utf-8",
             ) as f:
                 for line in f:
                     term, (df, doc_ids) = line.split(":", 1)

@@ -4,10 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 import asyncpg
 from typing import Optional
 import time
-from backend-inverted-index.postgres_index.database import get_database_connection
-from backend-inverted-index.custom_inverted_index.inverted_index import SPIMI
+from backend_inverted_index.postgres_index.database import get_database_connection
+from backend_inverted_index.custom_inverted_index.inverted_index import SPIMI
 import pandas as pd
-from backend-multidimensional-index.rtree import RTree
+import numpy as np
+from backend_multidimensional_index.rtree import RTree
 
 
 app = FastAPI()
@@ -26,9 +27,11 @@ class SearchSongsResponse(BaseModel):
 
 
 def read_feature_vectors(csv_file):
-    df = pd.read_csv(csv_file, header=None)
+    #df = pd.read_csv(csv_file, header=None)
+    df = pd.read_csv(csv_file, skiprows=1, names=['track_id', 'features'])
 
-    fv = {row[0]: np.array(row[1:]) for row in df.itertuples(index=False)}
+    #fv = {row[0]: np.array(row[1:]) for row in df.itertuples(index=False)}
+    fv = {row['track_id']: np.fromstring(row['features'].strip('[]'), sep=' ') for _, row in df.iterrows()}
 
     return fv
 
@@ -96,8 +99,9 @@ async def search_songs_md(
 ):
     start_time = time.time()
     serialized_result = []
-    fv = read_feature_vectors('features_vectors.csv')
-    points = [] #Points to insert
+    fv = read_feature_vectors('backend_multidimensional_index/song_features.csv')
+    #print("FV: ")
+    #print(fv)
 
     try:        
         if indexType == "default" or indexType == "RTREE":
@@ -106,7 +110,7 @@ async def search_songs_md(
                 raise HTTPException(status_code=400, detail="Song not found")
             
             query_point = fv[q]
-            rtree = RTree(points)
+            rtree = RTree(fv)
             results = rtree.knn_search(query_point, k)
     
             serialized_result = [
