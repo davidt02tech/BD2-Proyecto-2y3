@@ -19,14 +19,14 @@ import Layout from "../layouts/Layout.astro";
 
       <section id="introducción" class="mt-6">
         <h2 class="text-4xl font-semibold mb-6">Introducción</h2>
-        <h3 class="text-2xl font-semibold mb-2">Objetivo del proyecto</h3>
+        <h3 class="text-2xl font-semibold mb-2 text-gray-500">Objetivo del proyecto</h3>
         <p>El objetivo de este proyecto es construir un índice invertido utilizando la técnica Single-Pass In-Memory Indexing (SPIMI) para manejar grandes colecciones de documentos.</p>
         <ul class="list-disc list-inside ml-4">
           <li>El índice invertido permitirá realizar consultas eficientes y recuperar los documentos más relevantes utilizando la similitud de coseno.</li>
           <li>Se implementará una interfaz gráfica de usuario (GUI) para facilitar la interacción con el sistema de recuperación de información.</li>
           <li>Se realizarán experimentos para evaluar el rendimiento del índice invertido y analizar los resultados obtenidos.</li>
         </ul>
-        <h3 class="text-2xl font-semibold mb-2 mt-6">Dominio de datos</h3>
+        <h3 class="text-2xl font-semibold mb-2 mt-6 text-gray-500">Dominio de datos</h3>
         <p>El dominio de datos consiste en letras de canciones disponibles en Spotify. El dataset contiene la siguiente información:</p>
         <ul class="list-disc list-inside ml-4">
           <li><strong>Nombre del archivo</strong>: `spotify_songs.csv`</li>
@@ -39,7 +39,7 @@ import Layout from "../layouts/Layout.astro";
 
       <section id="backend-índice-invertido" class="mt-8">
         <h2 class="text-3xl font-semibold mb-2">Backend: Índice Invertido</h2>
-        <h3 class="text-2xl font-semibold mb-2">Construcción en memoria secundaria</h3>
+        <h3 class="text-2xl font-semibold mb-2 text-gray-500">Construcción en memoria secundaria</h3>
         <p>La construcción del índice invertido se realiza en memoria secundaria utilizando la técnica SPIMI, que incluye los siguientes pasos:</p>
         <ol class="list-decimal list-inside ml-4">
           <li><strong>Preprocesamiento</strong>: Las letras de las canciones se preprocesan utilizando la tokenización, eliminación de stopwords y stemming.</li>
@@ -47,7 +47,7 @@ import Layout from "../layouts/Layout.astro";
           <li><strong>Merge de bloques</strong>: Los bloques ordenados se fusionan en un índice invertido final, almacenado en disco en formato `.txt`.</li>
         </ol>
 
-        <h3 class="text-2xl font-semibold mb-2 mt-8">Ejecución de consultas aplicando Similitud de Coseno</h3>
+        <h3 class="text-2xl font-semibold mb-2 mt-8 text-gray-500">Ejecución de consultas aplicando Similitud de Coseno</h3>
         <p>La ejecución de consultas se realiza aplicando la similitud de coseno entre la consulta y los documentos en el índice. El proceso incluye:</p>
         <ol class="list-decimal list-inside ml-4 mb-8">
           <li><strong>Procesamiento de la consulta</strong>: La consulta se tokeniza, se eliminan las stopwords y se aplican técnicas de stemming.</li>
@@ -55,7 +55,7 @@ import Layout from "../layouts/Layout.astro";
           <li><strong>Similitud de coseno</strong>: Se calcula la similitud de coseno entre la consulta y cada documento en el índice. Los documentos se ordenan por su relevancia y se devuelve el top-k de documentos más relevantes.</li>
         </ol>
         
-        <h3 class="text-2xl font-semibold mb-2">Índice Invertido en PostgreSQL</h3>
+        <h3 class="text-2xl font-semibold mb-2 text-gray-500">Índice Invertido en PostgreSQL</h3>
         <p>El índice invertido puede ser integrado en PostgreSQL utilizando técnicas avanzadas de indexación como GIN (Generalized Inverted Index) para realizar búsquedas eficientes en texto completo.</p>
         <p>Al aplicar el índice GIN a una columna de texto completo en PostgreSQL, este motor de base de datos utiliza un proceso de tokenización para dividir el texto en palabras o significativas. Elimina los stop words y caracteres no alfabéticos según el diccionario de texto completo especificado (en esta implementación será 'english'). Una vez que el texto se ha tokenizado, PostgreSQL genera un vector de texto (tsvector) para cada fila en la tabla que contiene la columna indexada. Este vector representa un conjunto ordenado de tokens que están presentes en el texto. Finalmente, cada palabra única se convierte en clave del índice, es decir, mantiene una lista de 'postings', donde cada posting contiene información sobre las filas de la tabla donde esa palabra en específico aparece.</p>
         <p>Los pasos a seguir para la implementación del índice GIN en PostgreSQL fueron los siguientes:</p>
@@ -63,38 +63,37 @@ import Layout from "../layouts/Layout.astro";
           <li>Creamos una tabla `spotify_table` cuyas columnas son los mismos atributos indicados en el archivo de datos elegido.</li>
           <li>Cargamos la información del archivo de datos a la tabla.</li>
         </ol>
-        <pre><code>sql
-COPY spotify_table
-FROM 'C:\Program Files\PostgreSQL\13\data\spotify_songs.csv'
-DELIMITER ','
-CSV HEADER;
+        <pre><code class="flex items-center">
+        COPY spotify_table
+        FROM 'C:\Program Files\PostgreSQL\13\data\spotify_songs.csv'
+        DELIMITER ','
+        CSV HEADER;
         </code></pre>
         <ol class="list-decimal list-inside ml-4" start="3">
           <li>Creamos una nueva columna `author_lyrics_tsvector` en la tabla de tipo `tsvector`, la cual alojará la concatenación de los 3 campos elegidos a realizar la búsqueda de texto completo.</li>
         </ol>
-        <pre><code>sql
-ALTER TABLE spotify_table ADD COLUMN author_lyrics_tsvector tsvector;
-        </code></pre>
-        <pre><code>sql
-UPDATE spotify_table 
-SET author_lyrics_tsvector = setweight(to_tsvector('english', track_artist), 'A') 
-|| setweight(to_tsvector('english', track_name), 'B') 
-|| setweight(to_tsvector('english', lyrics), 'C');
+        <pre><code class="flex items-center">
+        ALTER TABLE spotify_table ADD COLUMN author_lyrics_tsvector tsvector;
+
+        UPDATE spotify_table 
+        SET author_lyrics_tsvector = setweight(to_tsvector('english', track_artist), 'A') 
+        || setweight(to_tsvector('english', track_name), 'B') 
+        || setweight(to_tsvector('english', lyrics), 'C');
         </code></pre>
         <ol class="list-decimal list-inside ml-4" start="4">
           <li>Por último, construimos el índice GIN sobre esta nueva columna.</li>
         </ol>
-        <pre><code>sql
-CREATE INDEX idx_gin_author_lyrics ON spotify_table USING GIN (author_lyrics_tsvector);
+        <pre><code class="flex items-center">
+        CREATE INDEX idx_gin_author_lyrics ON spotify_table USING GIN (author_lyrics_tsvector);
         </code></pre>
         <ol class="list-decimal list-inside ml-4" start="5">
           <li>Para realizar la consulta, utilizamos la función `ts_query` para convertir la cadena de búsqueda en una estructura que PostgreSQL pueda comparar con los índices creados.</li>
         </ol>
-        <pre><code>sql
-SELECT track_id, track_name, track_artist, lyrics
-FROM spotify_table
-WHERE author_lyrics_tsvector @@ to_tsquery('english', query)
-LIMIT K;
+        <pre><code class="flex items-center">
+        SELECT track_id, track_name, track_artist, lyrics
+        FROM spotify_table
+        WHERE author_lyrics_tsvector @@ to_tsquery('english', query)
+        LIMIT K;
         </code></pre>
       </section>
 

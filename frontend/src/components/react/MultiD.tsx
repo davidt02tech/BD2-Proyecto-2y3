@@ -5,14 +5,12 @@ import { animals } from "../data2.js";
 import type { Track } from "../../models/SpotifyTrack.ts";
 import type { Album } from "../../models/SpotifyAlbum.ts";
 
-
 export interface TrackData {
   track_id: string;
   track_name: string;
   track_artist: string;
   lyrics: string;
 }
-
 
 const getToken = async () => {
   const clientId = "cdce14d45a9642a6a218e361e63a1c92";
@@ -68,6 +66,18 @@ const fetchAlbumDetails = async (accessToken: string, albumId: string): Promise<
   return data;
 };
 
+const fetchTrackDetails = async (trackData: TrackData[], accessToken: string) => {
+  const updatedTrackData = await Promise.all(trackData.map(async (track) => {
+    const spotifyTrack = await fetchSpotifyTrack(accessToken, track.track_id);
+    return {
+      ...track,
+      track_name: spotifyTrack.name,
+      track_artist: spotifyTrack.artists.map(artist => artist.name).join(", ")
+    };
+  }));
+  return updatedTrackData;
+};
+
 const SeachApi1: React.FC = () => {
   const [trackData, setTrackData] = useState<TrackData[]>([]);
   const [query, setQuery] = useState('');
@@ -85,7 +95,7 @@ const SeachApi1: React.FC = () => {
 
   const fetchTrackData = async (searchQuery: string, indexType: string, kValue: number) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/indexSearch?q=${searchQuery}&k=${kValue}&indexType=${indexType}`, {
+      const response = await fetch(`http://127.0.0.1:8000/multiDimensionalSearch?q=${searchQuery}&k=${kValue}&indexType=${indexType}`, {
         headers: {
           'accept': 'application/json',
         },
@@ -94,7 +104,10 @@ const SeachApi1: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setTrackData(data.results);
+      const token = await getToken();
+      setAccessToken(token);
+      const updatedData = await fetchTrackDetails(data.results, token);
+      setTrackData(updatedData);
       setError(null);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -105,20 +118,17 @@ const SeachApi1: React.FC = () => {
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     const formattedQuery = query.replace(/\s+/g, '_');
-    //fetchTrackData(formattedQuery, selectedType || 'default', k);
-    fetchTrackData(formattedQuery,'default', k);
+    fetchTrackData(formattedQuery, 'default', k);
   };
 
   const handleRowClick = async (lyrics: string, trackId: string) => {
     setSelectedLyrics(lyrics);
     setSelectedTrackId(trackId);
-    const token = await getToken();
-    setAccessToken(token);
-    const trackData = await fetchSpotifyTrack(token, trackId);
+    const trackData = await fetchSpotifyTrack(accessToken!, trackId);
     setSpotifyTrack(trackData);
-    const albumData = await fetchAlbumDetails(token, trackData.album.id);
+    const albumData = await fetchAlbumDetails(accessToken!, trackData.album.id);
     setAlbum(albumData);
-    const tracksData = await fetchAlbumTracks(token, trackData.album.id);
+    const tracksData = await fetchAlbumTracks(accessToken!, trackData.album.id);
     setTracks(tracksData);
     onOpen();
   };
@@ -134,7 +144,7 @@ const SeachApi1: React.FC = () => {
       <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
         <Input
           type="text"
-          placeholder="Search your favourite song"
+          placeholder="Insert your ID song"
           className='max-w-sm'
           size='lg'
           value={query}

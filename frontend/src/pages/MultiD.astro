@@ -1,0 +1,18 @@
+---
+import Layout from "../layouts/Layout.astro";
+import SpotifyApp2 from "../components/react/MultiD.tsx";
+import RotatingImage from "../components/react/imageLoad.jsx";
+---
+
+<Layout title="Search">
+    <main class="pt-16">
+        <div class="flex items-center justify-between">
+            <h1 class="text-7xl text-green-500 font-bold mb-5">Multi Dimensional Search</h1>
+            <div>
+              <RotatingImage client:load />
+            </div>
+          </div>
+        <SpotifyApp2 client:load />
+    </main>
+</Layout>
+
