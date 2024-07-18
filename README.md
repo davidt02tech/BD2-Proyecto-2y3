@@ -181,10 +181,6 @@ Este manual de usuario está diseñado para guiarte a través del uso de nuestra
 - **Tipografía**:
   - Las fuentes utilizadas son modernas y legibles, con tamaños de texto que varían según la importancia de la información (por ejemplo, títulos más grandes y negritas para encabezados).
 
-- **Diseño Responsivo**:
-  - La interfaz está diseñada para ser completamente responsiva, asegurando una experiencia de usuario óptima tanto en dispositivos de escritorio como móviles.
-
-
 # Experimentación
 ## Resultados experimentales
 ## Análisis y discusión
