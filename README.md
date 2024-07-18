@@ -6,6 +6,10 @@
     - [Construcción en memoria secundaria](#construcción-en-memoria-secundaria)
     - [Ejecución de consultas aplicando Similitud de Coseno](#ejecución-de-consultas-aplicando-similitud-de-coseno)
     - [Índice Invertido en PostgreSQL](#índice-invertido-en-postgresql)
+- [Backend: Índice Multidimensional](#backend-índice-multidimensional)
+  	-[Técnica de indexación de las librerías utilizadas]
+  	-[KNN Search y Range Search]
+  	-[Maldición de la dimensionalidad]
 - [Frontend](#frontend)
     - [Manual de usuario](#manual-de-usuario)
     - [Diseño de GUI](#diseño-de-gui)
@@ -84,6 +88,41 @@ FROM spotify_table
 WHERE author_lyrics_tsvector @@ to_tsquery('english', query)
 LIMIT K
 ```
+# Backend: Índice Multidimensional
+## Técnica de indexación de las librerías utilizadas
+### RTree
+La librería de ```rtree``` utiliza un índice R-tree para indexar datos multidimensionales. Un R-tree es una estructura de datos que organiza los datos espaciales en forma de árbol, permitiendo búsquedas eficientes basadas en la localización. Utiliza técnicas de particionamiento espacial para agrupar objetos que están cerca unos de otros en el espacio multidimensional.
+
+#### Construcción del Índice en rtree
+1. **Creación del Árbol:** Se inicia creando un árbol vacío.
+2. **Inserción de Datos:** Se añaden los datos al árbol R-tree, donde cada dato está asociado con un MBR que representa su ubicación en el espacio multidimensional.
+3. **Optimización y Balanceo:** El árbol R-tree se optimiza y balancea para asegurar que las búsquedas sean eficientes.
+
+### Faiss
+Faiss emplea técnicas avanzadas como índices vectoriales (como el índice IVFADC) para realizar búsquedas eficientes en grandes conjuntos de datos vectoriales, como características extraídas de imágenes o texto. Utiliza métodos de agrupamiento jerárquico y cuantización vectorial para optimizar el espacio de búsqueda.
+
+#### Construcción del Índice en faiss
+1. **Selección del Índice:** Se elige un tipo de índice adecuado para los datos vectoriales, como IVFADC (Índice de Vector de Fuerza Acelerada con Clustering Densidad Aproximado).
+2. **Entrenamiento del Índice:** Se entrena el índice con los datos vectoriales de entrada, donde se aplican técnicas de agrupamiento y cuantización para optimizar el espacio de búsqueda.
+3. **Indexación Eficiente:** Faiss realiza la indexación de los vectores de manera eficiente, preparándolos para realizar búsquedas rápidas.
+
+## Búsquedas
+### RTree
+- **KNN Search:** rtree permite realizar búsquedas de los k vecinos más cercanos utilizando el índice R-tree. Esto se logra buscando en el árbol los nodos más cercanos al punto de consulta y refinando la búsqueda en los nodos cercanos para encontrar los vecinos más cercanos.
+- **Range Search:** También es posible realizar búsquedas por rango en rtree. Esto implica buscar todos los objetos dentro de un rango específico definido por un rectángulo o una región en el espacio multidimensional.
+
+### Faiss
+- **KNN Search:** En faiss, el KNN Search se realiza utilizando índices de aproximación que optimizan la búsqueda de los vecinos más cercanos en espacios vectoriales de alta dimensionalidad.
+- **Range Search:** Faiss soporta búsquedas por rango mediante el uso de índices que permiten buscar todos los vectores dentro de un radio específico en el espacio vectorial.
+
+## Maldición de la dimensionalidad
+Para mitigar la maldición de la dimensionalidad se pueden seguir las siguientes estrategias:
+
+- **Selección de Características:** Reducir la dimensionalidad de los datos eliminando características irrelevantes o redundantes puede ayudar a mitigar la maldición de la dimensionalidad.
+- **Cuantización:** Faiss utiliza técnicas de cuantización que reducen la dimensionalidad efectiva de los datos, haciendo que las búsquedas sean más rápidas y eficientes.
+- **Índices Aproximados:** Faiss permite el uso de índices aproximados que facilitan la búsqueda rápida en datos de alta dimensionalidad al sacrificar una pequeña cantidad de precisión.
+- **Uso de GPUs:** Faiss está optimizado para utilizar GPUs, lo que permite realizar cálculos intensivos en paralelo y manejar grandes volúmenes de datos multidimensionales con mayor rapidez.
+
 
 # Frontend
 ## Manual de usuario
