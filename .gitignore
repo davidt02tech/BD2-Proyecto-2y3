@@ -1,0 +1,5 @@
+venv/
+env/
+vector-songs/downloaded
+vector-songs/.vscode
+backend-inverted-index/__pycache__/
