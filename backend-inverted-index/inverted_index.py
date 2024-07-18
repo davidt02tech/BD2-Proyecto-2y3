@@ -80,6 +80,7 @@ class SPIMI:
         self.index_number = SPIMI.index_number
         SPIMI.index_number += 1
         self.index = defaultdict(self._get_empty_bucket)
+        self.merged_index = 0
 
     def _get_empty_bucket(self):
         return Bucket(self.path)
@@ -146,19 +147,18 @@ class SPIMI:
             term, df = make_tuple(term_df)
             heapq.heappush(sorted_index, (term, (df, bucket_pointer, i)))
 
-        merged_index = 0
-
         while len(empty_readers) < len(file_names):
             term, (df, bucket_pointer, curr_reader) = heapq.heappop(sorted_index)
-            if len(merged) + 1 > self.BLOCK_SIZE:
+            if len(merged) > self.BLOCK_SIZE - 1:
                 with open(
-                        os.path.join(self.path, f"index_{self.index_number}_merged_{merged_index}.txt", ),
+                        os.path.join(self.path, f"index_{self.index_number}_merged_{self.merged_index}.txt", ),
                         "w",
                         encoding="utf-8",
                 ) as f:
                     for term, df_bucket in merged.items():
                         f.write(f"({term},{df_bucket[0]}):{df_bucket[1]}\n")
                 merged = dict()
+                self.merged_index = + 1
 
             if term in merged:
                 lhs_postings, lhs_next = self.load_bucket(merged[term][1])
@@ -204,7 +204,6 @@ class SPIMI:
             term, df = make_tuple(term_df)
             heapq.heappush(sorted_index, (term, (df, bucket_pointer, curr_reader)))
 
-
         def search(query, k=10):
             """
             Searches the SPIMI index and returns the top k most relevant documents.
@@ -219,30 +218,27 @@ class SPIMI:
             """
 
             # Process the query
-            query_terms = process_text(query)  # Use the same processing as in indexing
+            query_terms = process_text(query, language="en")  # Use the same processing as in indexing
 
             # Load the merged index
             index = {}
-            with open(
-                    os.path.join(self.path,),
-                    "r",
-                    encoding="utf-8",
-            ) as f:
-                for line in f:
-                    term, (df, doc_ids) = line.split(":", 1)
-                    index[term.strip()] = (int(df), eval(doc_ids))
+
+            for i in range(self.merged_index):
+                with open(os.path.join(self.path, f"index_{self.index_number}_merged_{i}")) as f:
+                    for line in f:
+                        term, (df, bucket) = line.rstrip().split(":", 1)
+                        index[term] = (int(df), bucket)
 
             # Calculate TF-IDF scores
             scores = defaultdict(float)
             for term in query_terms:
                 if term in index:
-                    df, postings = index[term]
-                    idf = math.log(
-                        len(data) / df
-                    )  # data is your original document dataset
-
-                    for doc_id, tf in postings.items():
-                        scores[doc_id] += tf * idf
+                    next = 0
+                    while next is not None:
+                        postings, next = self.load_bucket(index[term])
+                        idf = math.log(18, 454 / df)
+                        for doc_id, tf in postings.items():
+                            scores[doc_id] += tf * idf
 
             # Get top k results
             top_k = heapq.nlargest(k, scores.items(), key=lambda x: x[1])
