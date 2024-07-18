@@ -97,21 +97,108 @@ import Layout from "../layouts/Layout.astro";
         </code></pre>
       </section>
 
+      <section id="backend-índice-multidimensional" class="mt-8">
+        <h2 class="text-3xl font-semibold mb-2">Backend: Índice Multidimensional</h2>
+        <h3 class="text-2xl font-semibold mb-2 text-gray-500">Técnica de indexación de las librerías utilizadas</h3>
+
+        <h4 class="text-xl font-semibold mb-2 text-gray-400">RTree</h4>
+        <p>La librería de <code>rtree</code> utiliza un índice R-tree para indexar datos multidimensionales. Un R-tree es una estructura de datos que organiza los datos espaciales en forma de árbol, permitiendo búsquedas eficientes basadas en la localización. Utiliza técnicas de particionamiento espacial para agrupar objetos que están cerca unos de otros en el espacio multidimensional.</p>
+
+        <h5 class="text-lg font-semibold mb-2 text-gray-300">Construcción del Índice en rtree</h5>
+        <ol class="list-decimal list-inside ml-4">
+          <li><strong>Creación del Árbol:</strong> Se inicia creando un árbol vacío.</li>
+          <li><strong>Inserción de Datos:</strong> Se añaden los datos al árbol R-tree, donde cada dato está asociado con un MBR que representa su ubicación en el espacio multidimensional.</li>
+          <li><strong>Optimización y Balanceo:</strong> El árbol R-tree se optimiza y balancea para asegurar que las búsquedas sean eficientes.</li>
+        </ol>
+
+        <h4 class="text-xl font-semibold mb-2 mt-6 text-gray-400">Faiss</h4>
+        <p>Faiss emplea técnicas avanzadas como índices vectoriales (como el índice IVFADC) para realizar búsquedas eficientes en grandes conjuntos de datos vectoriales, como características extraídas de imágenes o texto. Utiliza métodos de agrupamiento jerárquico y cuantización vectorial para optimizar el espacio de búsqueda.</p>
+
+        <h5 class="text-lg font-semibold mb-2 text-gray-300">Construcción del Índice en faiss</h5>
+        <ol class="list-decimal list-inside ml-4">
+          <li><strong>Selección del Índice:</strong> Se elige un tipo de índice adecuado para los datos vectoriales, como IVFADC (Índice de Vector de Fuerza Acelerada con Clustering Densidad Aproximado).</li>
+          <li><strong>Entrenamiento del Índice:</strong> Se entrena el índice con los datos vectoriales de entrada, donde se aplican técnicas de agrupamiento y cuantización para optimizar el espacio de búsqueda.</li>
+          <li><strong>Indexación Eficiente:</strong> Faiss realiza la indexación de los vectores de manera eficiente, preparándolos para realizar búsquedas rápidas.</li>
+        </ol>
+
+        <h3 class="text-2xl font-semibold mb-2 mt-6 text-gray-500">Búsquedas</h3>
+        <h4 class="text-xl font-semibold mb-2 text-gray-400">RTree</h4>
+        <ul class="list-disc list-inside ml-4">
+          <li><strong>KNN Search:</strong> rtree permite realizar búsquedas de los k vecinos más cercanos utilizando el índice R-tree. Esto se logra buscando en el árbol los nodos más cercanos al punto de consulta y refinando la búsqueda en los nodos cercanos para encontrar los vecinos más cercanos.</li>
+          <li><strong>Range Search:</strong> También es posible realizar búsquedas por rango en rtree. Esto implica buscar todos los objetos dentro de un rango específico definido por un rectángulo o una región en el espacio multidimensional.</li>
+        </ul>
+
+        <h4 class="text-xl font-semibold mb-2 mt-6 text-gray-400">Faiss</h4>
+        <ul class="list-disc list-inside ml-4">
+          <li><strong>KNN Search:</strong> En faiss, el KNN Search se realiza utilizando índices de aproximación que optimizan la búsqueda de los vecinos más cercanos en espacios vectoriales de alta dimensionalidad.</li>
+          <li><strong>Range Search:</strong> Faiss soporta búsquedas por rango mediante el uso de índices que permiten buscar todos los vectores dentro de un radio específico en el espacio vectorial.</li>
+        </ul>
+
+        <h3 class="text-2xl font-semibold mb-2 mt-6 text-gray-500">Maldición de la dimensionalidad</h3>
+        <p>Para mitigar la maldición de la dimensionalidad se pueden seguir las siguientes estrategias:</p>
+        <ul class="list-disc list-inside ml-4">
+          <li><strong>Selección de Características:</strong> Reducir la dimensionalidad de los datos eliminando características irrelevantes o redundantes puede ayudar a mitigar la maldición de la dimensionalidad.</li>
+          <li><strong>Cuantización:</strong> Faiss utiliza técnicas de cuantización que reducen la dimensionalidad efectiva de los datos, haciendo que las búsquedas sean más rápidas y eficientes.</li>
+          <li><strong>Índices Aproximados:</strong> Faiss permite el uso de índices aproximados que facilitan la búsqueda rápida en datos de alta dimensionalidad al sacrificar una pequeña cantidad de precisión.</li>
+          <li><strong>Uso de GPUs:</strong> Faiss está optimizado para utilizar GPUs, lo que permite realizar cálculos intensivos en paralelo y manejar grandes volúmenes de datos multidimensionales con mayor rapidez.</li>
+        </ul>
+      </section>
+
       <section id="frontend" class="mt-8">
         <h2 class="text-3xl font-semibold mb-2">Frontend</h2>
-        <h3 class="text-2xl font-semibold mb-2">Manual de usuario</h3>
-        <h3 class="text-2xl font-semibold mb-2">Diseño de GUI</h3>
+        <h3 class="text-2xl font-semibold mb-2 text-gray-500">Manual de usuario</h3>
+        <div class="mb-4">
+          <h4 class="text-xl font-semibold mb-2 text-gray-400">Introducción</h4>
+          <p>Este manual de usuario está diseñado para guiarte a través del uso de nuestra aplicación web de búsqueda de canciones en Spotify. Aquí encontrarás instrucciones paso a paso sobre cómo utilizar cada una de las funcionalidades disponibles en la aplicación.</p>
+        </div>
+        <div class="mb-4">
+          <h4 class="text-xl font-semibold mb-2 text-gray-400">Funcionalidades Principales</h4>
+          <ol class="list-decimal ml-6">
+            <li class="mb-2">
+              <strong>Búsqueda de Canciones por ID:</strong> Ingresa el ID de la canción que deseas buscar en el campo de texto "Insert your ID song". Selecciona el valor de 'k' en el campo correspondiente. Selecciona el tipo de búsqueda en el menú desplegable "Type". Haz clic en el botón "Search" para iniciar la búsqueda.
+            </li>
+            <li class="mb-2">
+              <strong>Resultados de la Búsqueda:</strong> Los resultados se mostrarán en una tabla con las columnas "Song Name", "Artist", y "Id". Haz clic en cualquier fila de la tabla para ver más detalles sobre la canción y el álbum.
+            </li>
+            <li class="mb-2">
+              <strong>Detalles de la Canción:</strong> Al hacer clic en una fila de la tabla, se abrirá un modal con información detallada sobre la canción, incluyendo la carátula del álbum, el nombre de la canción, el nombre del artista y una vista previa del audio (si está disponible). También se mostrarán los detalles del álbum y una lista de todas las canciones del álbum en una tabla dentro del modal.
+            </li>
+            <li class="mb-2">
+              <strong>Búsqueda Multidimensional:</strong> Navega a la sección "Multi Dimensional Search" para realizar búsquedas avanzadas. Ingresa los parámetros de búsqueda y selecciona las opciones disponibles. Visualiza los resultados de la búsqueda en una tabla similar a la de la búsqueda por ID.
+            </li>
+          </ol>
+        </div>
+      </section>
+      <section id="gui-design" class="mt-8">
+        <h3 class="text-2xl font-semibold mb-2 text-gray-500">Diseño de GUI</h3>
+        <div class="mb-4">
+          <h4 class="text-xl font-semibold mb-2 text-gray-400">Estructura de la Página</h4>
+          <p class="mb-2"><strong>Encabezado:</strong> El encabezado contiene enlaces de navegación a las diferentes secciones de la aplicación: Home, Index Search, Multi Dimensional Search, y Search.</p>
+          <p class="mb-2"><strong>Formulario de Búsqueda:</strong> Un formulario con campos para ingresar el ID de la canción, seleccionar el valor de 'k', y elegir el tipo de búsqueda. Incluye un botón de búsqueda para enviar la consulta.</p>
+          <p class="mb-2"><strong>Tabla de Resultados:</strong> Una tabla que muestra los resultados de la búsqueda con columnas para el nombre de la canción, el artista y el ID.</p>
+          <p class="mb-2"><strong>Modal de Detalles de la Canción:</strong> Un modal que se abre al hacer clic en una fila de la tabla de resultados. Contiene detalles extensos sobre la canción y el álbum, incluyendo una vista previa de audio.</p>
+        </div>
+        <div class="mb-4">
+          <h4 class="text-xl font-semibold mb-2 text-gray-400">Estilos y Temas</h4>
+          <p class="mb-2"><strong>Colores:</strong> El diseño utiliza un fondo oscuro con texto en color claro para facilitar la lectura y reducir la fatiga visual. Los elementos interactivos, como botones y enlaces, están destacados en colores vibrantes como el verde y el rojo.</p>
+          <p class="mb-2"><strong>Tipografía:</strong> Las fuentes utilizadas son modernas y legibles, con tamaños de texto que varían según la importancia de la información (por ejemplo, títulos más grandes y negritas para encabezados).</p>
+          <p class="mb-2"><strong>Diseño Responsivo:</strong> La interfaz está diseñada para ser completamente responsiva, asegurando una experiencia de usuario óptima tanto en dispositivos de escritorio como móviles.</p>
+        </div>
       </section>
 
       <section id="experimentación" class="mt-8">
         <h2 class="text-3xl font-semibold mb-2">Experimentación</h2>
-        <h3 class="text-2xl font-semibold mb-2">Resultados experimentales</h3>
-        <h3 class="text-2xl font-semibold mb-2">Análisis y discusión</h3>
+        <h3 class="text-2xl font-semibold mb-2 text-gray-500">Resultados experimentales</h3>
+        <h3 class="text-2xl font-semibold mb-2 text-gray-500">Análisis y discusión</h3>
       </section>
 
       <section id="autores" class="mt-8">
         <h2 class="text-3xl font-semibold mb-2">Autores</h2>
         <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col items-center">
+            <img src="https://avatars.githubusercontent.com/u/41312479?v=4" alt="Esteban Vasquez" class="w-32 h-32 rounded-full mb-2">
+            <a href="https://github.com/MuchSquid" target="_blank" class="text-blue-500">github.com/MuchSquid</a>
+          </div>
           <div class="flex flex-col items-center">
             <img src="https://avatars.githubusercontent.com/u/67709665?v=4" alt="Isaac Vera Romero" class="w-32 h-32 rounded-full mb-2">
             <a href="https://github.com/IsaacVera10" target="_blank" class="text-blue-500">github.com/IsaacVera10</a>
@@ -127,10 +214,6 @@ import Layout from "../layouts/Layout.astro";
           <div class="flex flex-col items-center">
             <img src="https://avatars.githubusercontent.com/u/75516714?v=4" alt="Leonardo Candio" class="w-32 h-32 rounded-full mb-2">
             <a href="https://github.com/leonardocandio" target="_blank" class="text-blue-500">github.com/leonardocandio</a>
-          </div>
-          <div class="flex flex-col items-center">
-            <img src="https://avatars.githubusercontent.com/u/41312479?v=4" alt="Esteban Vasquez" class="w-32 h-32 rounded-full mb-2">
-            <a href="https://github.com/MuchSquid" target="_blank" class="text-blue-500">github.com/MuchSquid</a>
           </div>
         </div>
       </section>

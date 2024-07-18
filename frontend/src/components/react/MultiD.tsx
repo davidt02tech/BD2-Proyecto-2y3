@@ -191,7 +191,7 @@ const SeachApi1: React.FC = () => {
       ) : (
         <p>Loading...</p>
       )}
-      {selectedType && <p><strong>Search type:</strong> {selectedType}</p>}
+     
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
         <ModalContent className="max-w-7xl mx-auto p-4">
