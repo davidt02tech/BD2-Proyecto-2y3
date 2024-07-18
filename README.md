@@ -94,7 +94,7 @@ LIMIT K
 
  Para cada coeficiente MFCC, calculamos la media, la desviación estándar, mediana, quantiles, mínimo y máximo. Luego, concatenamos estos valores para obtener un vector de características de 91 dimensiones para cada canción.
 
- '''python
+ ```python
  def extract_features(file_path, n=13):
     y, sr = librosa.load(file_path)
     mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n)
@@ -115,7 +115,7 @@ LIMIT K
     ])
     
     return combined_features
-'''
+```
 
 ## Técnica de indexación de las librerías utilizadas
 ### RTree
