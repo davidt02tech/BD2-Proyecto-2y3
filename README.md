@@ -171,6 +171,8 @@ Este manual de usuario está diseñado para guiarte a través del uso de nuestra
 - **Modal de Detalles de la Canción**:
   - Un modal que se abre al hacer clic en una fila de la tabla de resultados. Contiene detalles extensos sobre la canción y el álbum, incluyendo una vista previa de audio.
 
+![imagen1](a4.png)
+
 ### Estilos y Temas
 - **Colores**:
   - El diseño utiliza un fondo oscuro con texto en color claro para facilitar la lectura y reducir la fatiga visual.
