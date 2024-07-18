@@ -89,6 +89,34 @@ WHERE author_lyrics_tsvector @@ to_tsquery('english', query)
 LIMIT K
 ```
 # Backend: Índice Multidimensional
+## Vectores Caracterísiticos de los audios
+ Realizamos la extracción característica del audio de las canciones utilizando la librería `librosa`. Como el artículo de la bibliografía, calculamos los MFCCs (Mel-Frequency Cepstral Coefficients) de cada canción, obteniendo un vector de características de 13 dimensiones para cada canción.
+
+ Para cada coeficiente MFCC, calculamos la media, la desviación estándar, mediana, quantiles, mínimo y máximo. Luego, concatenamos estos valores para obtener un vector de características de 91 dimensiones para cada canción.
+
+ '''python
+ def extract_features(file_path, n=13):
+    y, sr = librosa.load(file_path)
+    mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n)
+    
+    features = {
+        'mean': np.mean(mfccs, axis=1),
+        'std': np.std(mfccs, axis=1),
+        'median': np.median(mfccs, axis=1),
+        'q25': np.percentile(mfccs, 25, axis=1),
+        'q75': np.percentile(mfccs, 75, axis=1),
+        'min': np.min(mfccs, axis=1),
+        'max': np.max(mfccs, axis=1)
+    }
+    
+    combined_features = np.concatenate([
+        features['mean'], features['std'], features['median'], 
+        features['q25'], features['q75'], features['min'], features['max']
+    ])
+    
+    return combined_features
+'''
+
 ## Técnica de indexación de las librerías utilizadas
 ### RTree
 La librería de ```rtree``` utiliza un índice R-tree para indexar datos multidimensionales. Un R-tree es una estructura de datos que organiza los datos espaciales en forma de árbol, permitiendo búsquedas eficientes basadas en la localización. Utiliza técnicas de particionamiento espacial para agrupar objetos que están cerca unos de otros en el espacio multidimensional.
